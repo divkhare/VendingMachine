@@ -1,0 +1,65 @@
+module vendmachine(input clk,reset,nickel,dime,quarter,input[3:0] selection,output[7:0]totalc,output reg [3:0] vend,output reg [7:0] change,gchange,reqchange,output reg makeselection,insertmoney);
+
+reg OF;
+reg vend_last;
+reg vend_q;
+wire coinreset;
+wire[7:0] cost[4:0];
+localparam gum=1,coke=2,candybar=3,water=4;
+assign cost[gum]=8'd25;
+assign cost[coke]=8'd100;
+assign cost[candybar]=8'd125;
+assign cost[water]=8'd150;
+reg nic,dim,quart;
+totalchange tc1( totalc,coinreset, nic,dim,quart);
+always @(*)
+begin
+if (reset)
+begin
+vend_last=4'b0;
+vend =4'd0;
+change= 8'd0;
+gchange =8'd0;
+reqchange =8'd0;
+	if (totalc > 8'b0 )
+begin
+	makeselection='b1;
+end
+	else
+	begin
+	makeselection= 'b0;
+	insertmoney='b1;
+	end
+end
+else 
+begin
+vend= 4'd0;
+makeselection='b0;
+change=8'd0;
+gchange= 8'd0;
+reqchange = 8'd0;
+
+insertmoney= (totalc>=cost[selection])? 'b0 : 'b1;
+vend= (insertmoney == 'b0)? selection : 3'b000;
+gchange = totalc-cost[selection] ;
+reqchange =cost[selection]-totalc;
+change = (totalc>=cost[selection])? gchange : reqchange;
+
+always @(posedge clk)
+begin
+vend_q <=vend >4'd0;
+vend_last <= vend_q;
+end
+
+always @ (nickel or dime or quarter)
+begin
+nic <=nickel;
+dim <= dime;
+quart <=quarter;
+end
+or OR1(coinreset,vend_last,reset);
+
+endmodule
+
+
+
